@@ -237,6 +237,7 @@
     let currentCategory = 0;
     let votes = [{}, {}, {}, {}, {}];
     let questions = [];
+    let adminPassword = "kma2026"; // Change this to your desired password
 
     // Initialize
     init();
@@ -252,9 +253,19 @@
       // Event listeners
       document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
+          const mode = e.target.className.split(' ')[1];
+          
+          // Check password for admin mode
+          if (mode.includes('admin')) {
+            const password = prompt('Enter admin password:');
+            if (password !== adminPassword) {
+              alert('Incorrect password');
+              return;
+            }
+          }
+          
           document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
           e.target.classList.add('active');
-          const mode = e.target.className.split(' ')[1];
           switchMode(mode);
         });
       });
