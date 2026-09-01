@@ -88,6 +88,11 @@
     <div class="container">
       <!-- ATTENDEE MODE -->
       <div class="attendee-mode" style="display: block;">
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #c0bfbf; padding-bottom: 12px;">
+          <button class="vote-button attendee-voting-tab active" onclick="showAttendeeVoting()" style="background: #515A78; flex: 1; margin: 0;">Poll Questions</button>
+          <button class="vote-button attendee-qa-tab" onclick="showAttendeeQA()" style="background: #c0bfbf; color: #292223; flex: 1; margin: 0;">Ask a Question</button>
+        </div>
+        
         <div id="voting-view">
           <p class="mode-header">Vote on this question</p>
           <div class="voting-container">
@@ -158,10 +163,10 @@
         </div>
 
         <div class="admin-panel">
-          <p class="admin-title">Switch Mode</p>
+          <p class="admin-title">Display Screen</p>
           <div class="admin-buttons">
-            <button onclick="showAttendeeVoting()">Show Voting</button>
-            <button onclick="showAttendeeQA()">Show Q&A</button>
+            <button onclick="displayVotingResults()">Show Vote Results</button>
+            <button onclick="displayQAQuestions()">Show Live Q&A</button>
           </div>
         </div>
 
@@ -407,12 +412,26 @@
     function showAttendeeVoting() {
       document.getElementById('voting-view').style.display = 'block';
       document.getElementById('qa-view').style.display = 'none';
+      
+      // Update tab styling
+      document.querySelector('.attendee-voting-tab').style.background = '#515A78';
+      document.querySelector('.attendee-voting-tab').style.color = 'white';
+      document.querySelector('.attendee-qa-tab').style.background = '#c0bfbf';
+      document.querySelector('.attendee-qa-tab').style.color = '#292223';
+      
       renderDisplayView();
     }
 
     function showAttendeeQA() {
       document.getElementById('voting-view').style.display = 'none';
       document.getElementById('qa-view').style.display = 'block';
+      
+      // Update tab styling
+      document.querySelector('.attendee-voting-tab').style.background = '#c0bfbf';
+      document.querySelector('.attendee-voting-tab').style.color = '#292223';
+      document.querySelector('.attendee-qa-tab').style.background = '#515A78';
+      document.querySelector('.attendee-qa-tab').style.color = 'white';
+      
       renderAdminPanel();
       renderLiveQuestions();
     }
@@ -495,6 +514,33 @@
         nextBtn.disabled = false;
         nextBtn.style.opacity = '1';
       }
+    }
+
+    function displayVotingResults() {
+      document.querySelector('.display-mode').style.display = 'block';
+      renderDisplayView();
+    }
+
+    function displayQAQuestions() {
+      // Show Q&A questions on the display
+      const approved = questions.filter(q => q.approved);
+      let qaHtml = '<div style="text-align: center;"><p style="color: #515A78; font-size: 16px; margin: 0 0 20px 0; font-weight: 600;">LIVE QUESTIONS</p>';
+      
+      if (approved.length === 0) {
+        qaHtml += '<p style="color: #515A78; font-size: 18px;">No questions yet. Submit your questions in the app!</p>';
+      } else {
+        qaHtml += '<div style="text-align: left; max-width: 700px; margin: 0 auto;">';
+        approved.forEach((q, i) => {
+          qaHtml += `<div style="background: white; border-left: 4px solid #F3B93F; border-radius: 8px; padding: 16px; margin-bottom: 16px;"><p style="font-size: 16px; color: #292223; margin: 0 0 8px 0; font-weight: 600;">${i + 1}. ${q.text}</p><p style="font-size: 12px; color: #515A78; margin: 0;">${q.timestamp}</p></div>`;
+        });
+        qaHtml += '</div>';
+      }
+      qaHtml += '</div>';
+      
+      document.querySelector('.display-mode').style.display = 'block';
+      document.getElementById('display-results').innerHTML = qaHtml;
+      document.getElementById('display-category-title').textContent = '';
+      document.querySelector('p[style*="LIVE NOW"]').style.display = 'none';
     }
 
     function exportSession() {
