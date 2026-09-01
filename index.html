@@ -163,6 +163,13 @@
         </div>
 
         <div class="admin-panel">
+          <p class="admin-title">Current Vote Results</p>
+          <div id="admin-results" style="background: #fafaf8; border-radius: 6px; padding: 12px; font-size: 13px; color: #515A78;">
+            <p style="text-align: center; color: #c0bfbf;">Votes will appear as attendees submit them</p>
+          </div>
+        </div>
+
+        <div class="admin-panel">
           <p class="admin-title">Display Screen</p>
           <div class="admin-buttons">
             <button onclick="displayVotingResults()">Show Vote Results</button>
@@ -206,15 +213,15 @@
     // DATA
     const categories = [
       {
-        title: "Which of the following is your biggest volunteer challenge?",
+        title: "What's your biggest volunteer challenge?",
         options: ["Recruiting and growing my team", "Losing current team members", "Training team members well", "Helping leaders step up to the next level"]
       },
       {
-        title: "Where do you need coaching when it comes to Special Needs Ministry?",
+        title: "Where do you need coaching regarding Special Needs Ministry?",
         options: ["Starting one from scratch", "Training my teams", "Leading a special needs ministry on a budget", "Partnering with parents"]
       },
       {
-        title: "What is your biggest struggle regarding leadership?",
+        title: "Where do you struggle to lead yourself?",
         options: ["Handling conflict well", "Managing my calendar and to-do list", "Delegating to others", "Taking care of myself to avoid burnout"]
       },
       {
@@ -222,8 +229,8 @@
         options: ["Friends and community - I feel alone", "Mentorship and coaching - I need wisdom", "Fresh ideas and insight - I want to grow", "A strong foundation - I need to build"]
       },
       {
-        title: "What is your biggest concern with KidMin Academy?",
-        options: ["Having enough time", "Going back to school", "Balancing my responsibilities", "Getting the funds"]
+        title: "When you think of enrolling with KidMin Academy, what's your top question?",
+        options: ["Having enough time - what are the assignments like?", "Going back to school - how difficult is it?", "Balancing my responsibilities - how will I do it all?", "Getting the funds - what are my options?"]
       }
     ];
 
@@ -365,6 +372,39 @@
         `).join('');
       
       document.getElementById('pending-questions').innerHTML = html;
+      renderAdminResults();
+    }
+
+    function renderAdminResults() {
+      const cat = categories[currentCategory];
+      const catVotes = votes[currentCategory] || {};
+      const total = Object.values(catVotes).reduce((a, b) => a + b, 0);
+      
+      const results = cat.options.map((opt, i) => {
+        const count = catVotes[i] || 0;
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        return { opt, count, pct };
+      }).sort((a, b) => b.count - a.count);
+      
+      let html = `<p style="margin: 0 0 12px 0; font-weight: 600; color: #292223;">Q${currentCategory + 1}: ${cat.title}</p>`;
+      
+      if (total === 0) {
+        html += '<p style="text-align: center; color: #c0bfbf; font-size: 13px; margin: 0;">No votes yet</p>';
+      } else {
+        html += results.map(r => `
+          <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+              <span style="color: #292223; font-weight: 500;">${r.opt}</span>
+              <span style="color: #515A78;">${r.count} (${r.pct}%)</span>
+            </div>
+            <div style="height: 20px; background: #c0bfbf; border-radius: 3px; overflow: hidden;">
+              <div style="height: 100%; background: #F3B93F; width: ${r.pct}%;"></div>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      document.getElementById('admin-results').innerHTML = html;
     }
 
     function approveQuestion(id) {
@@ -386,6 +426,7 @@
       document.getElementById('current-cat').textContent = currentCategory + 1;
       renderAttendeeView();
       renderDisplayView();
+      renderAdminResults();
     }
 
     function showCategorySelect() {
@@ -397,6 +438,7 @@
           document.getElementById('current-cat').textContent = currentCategory + 1;
           renderAttendeeView();
           renderDisplayView();
+          renderAdminResults();
         }
       }
     }
@@ -473,6 +515,7 @@
         document.querySelector('.admin-mode').style.display = 'block';
         loadNotes();
         renderAdminPanel();
+        renderAdminResults();
         renderDisplayView();
       } else if (mode.includes('display')) {
         document.querySelector('.display-mode').style.display = 'block';
