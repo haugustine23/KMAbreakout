@@ -117,6 +117,11 @@
             
             <button class="vote-button" id="submit-vote">Submit Your Vote</button>
             <p style="text-align: center; font-size: 12px; color: #515A78; margin: 8px 0 0 0;">Your votes are anonymous</p>
+            
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+              <button class="vote-button" id="prev-question" onclick="attendeeSwitchCategory(-1)" style="background: #c0bfbf; color: #292223; flex: 1;">← Previous Question</button>
+              <button class="vote-button" id="next-question" onclick="attendeeSwitchCategory(1)" style="background: #F3B93F; color: #292223; flex: 1;">Next Question →</button>
+            </div>
           </div>
         </div>
         
@@ -146,7 +151,7 @@
           <p class="admin-title">Voting Configuration</p>
           <div class="admin-buttons">
             <button onclick="switchCategory(-1)">← Previous</button>
-            <button id="category-select" onclick="showCategorySelect()">Category <span id="current-cat">1</span> / 4</button>
+            <button id="category-select" onclick="showCategorySelect()">Category <span id="current-cat">1</span> / 5</button>
             <button onclick="switchCategory(1)">Next →</button>
             <button onclick="resetVotes()">Reset Votes</button>
           </div>
@@ -163,6 +168,16 @@
         <div class="admin-panel">
           <p class="admin-title">Q&A Moderation</p>
           <div class="qa-list" id="pending-questions"></div>
+        </div>
+
+        <div class="admin-panel">
+          <p class="admin-title">Session Notes & Responses</p>
+          <div class="form-group">
+            <label class="form-label">Capture notes, key takeaways, and action items</label>
+            <textarea id="session-notes" placeholder="Type your notes here..." style="width: 100%; padding: 12px; border: 1px solid #c0bfbf; border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 120px;"></textarea>
+          </div>
+          <button class="vote-button" onclick="saveNotes()" style="background: #515A78; margin-top: 8px;">Save Notes</button>
+          <button class="vote-button" onclick="exportSession()" style="background: #F3B93F; color: #292223; margin-top: 8px;">Export Results</button>
         </div>
       </div>
 
@@ -186,25 +201,29 @@
     // DATA
     const categories = [
       {
-        title: "What excites you most about children's ministry?",
-        options: ["Building spiritual foundations early", "Creating welcoming community", "Equipping leaders for impact", "Seeing kids grow in faith and confidence"]
+        title: "Which of the following is your biggest volunteer challenge?",
+        options: ["Recruiting and growing my team", "Losing current team members", "Training team members well", "Helping leaders step up to the next level"]
       },
       {
-        title: "Which aspect of KMA appeals to you most?",
-        options: ["Structured certification curriculum", "Community and peer learning", "Practical skills and implementation", "Flexible format that fits my schedule"]
+        title: "Where do you need coaching when it comes to Special Needs Ministry?",
+        options: ["Starting one from scratch", "Training my teams", "Leading a special needs ministry on a budget", "Partnering with parents"]
       },
       {
-        title: "What's your biggest challenge in children's ministry?",
-        options: ["Finding time for preparation", "Keeping kids engaged", "Equipping and training volunteers", "Navigating different age groups"]
+        title: "What is your biggest struggle regarding leadership?",
+        options: ["Handling conflict well", "Managing my calendar and to-do list", "Delegating to others", "Taking care of myself to avoid burnout"]
       },
       {
-        title: "How would KMA help your ministry the most?",
-        options: ["Building a stronger theological foundation", "Giving me fresh ideas and resources", "Helping me lead my team better", "Increasing confidence in my role"]
+        title: "What's your biggest need as a KidMin leader?",
+        options: ["Friends and community - I feel alone", "Mentorship and coaching - I need wisdom", "Fresh ideas and insight - I want to grow", "A strong foundation - I need to build"]
+      },
+      {
+        title: "What is your biggest concern with KidMin Academy?",
+        options: ["Having enough time", "Going back to school", "Balancing my responsibilities", "Getting the funds"]
       }
     ];
 
     let currentCategory = 0;
-    let votes = [{}, {}, {}, {}];
+    let votes = [{}, {}, {}, {}, {}];
     let questions = [];
 
     // Initialize
@@ -239,6 +258,10 @@
       });
       
       renderAttendeeView();
+      
+      // Initialize navigation buttons
+      document.getElementById('prev-question').disabled = true;
+      document.getElementById('prev-question').style.opacity = '0.5';
     }
 
     function submitVote() {
@@ -429,12 +452,100 @@
         document.querySelector('.attendee-mode').style.display = 'block';
       } else if (mode.includes('admin')) {
         document.querySelector('.admin-mode').style.display = 'block';
+        loadNotes();
         renderAdminPanel();
         renderDisplayView();
       } else if (mode.includes('display')) {
         document.querySelector('.display-mode').style.display = 'block';
         renderDisplayView();
       }
+    }
+
+    function saveNotes() {
+      const notes = document.getElementById('session-notes').value;
+      localStorage.setItem('kmaSessionNotes', notes);
+      alert('Notes saved!');
+    }
+
+    function loadNotes() {
+      const notes = localStorage.getItem('kmaSessionNotes') || '';
+      document.getElementById('session-notes').value = notes;
+    }
+
+    function attendeeSwitchCategory(delta) {
+      currentCategory = Math.max(0, Math.min(currentCategory + delta, categories.length - 1));
+      renderAttendeeView();
+      
+      // Disable previous button on first question
+      const prevBtn = document.getElementById('prev-question');
+      if (currentCategory === 0) {
+        prevBtn.disabled = true;
+        prevBtn.style.opacity = '0.5';
+      } else {
+        prevBtn.disabled = false;
+        prevBtn.style.opacity = '1';
+      }
+      
+      // Disable next button on last question
+      const nextBtn = document.getElementById('next-question');
+      if (currentCategory === categories.length - 1) {
+        nextBtn.disabled = true;
+        nextBtn.style.opacity = '0.5';
+      } else {
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+      }
+    }
+
+    function exportSession() {
+      let exportText = 'KidMin Academy Pop-Up Session Results\n';
+      exportText += '=====================================\n\n';
+      exportText += new Date().toLocaleString() + '\n\n';
+      
+      // Add voting results
+      exportText += 'VOTING RESULTS:\n';
+      exportText += '---------------\n\n';
+      
+      categories.forEach((cat, catIndex) => {
+        exportText += `Q${catIndex + 1}: ${cat.title}\n`;
+        const catVotes = votes[catIndex] || {};
+        const total = Object.values(catVotes).reduce((a, b) => a + b, 0);
+        
+        cat.options.forEach((opt, optIndex) => {
+          const count = catVotes[optIndex] || 0;
+          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+          exportText += `  • ${opt}: ${count} votes (${pct}%)\n`;
+        });
+        exportText += '\n';
+      });
+      
+      // Add Q&A
+      if (questions.length > 0) {
+        exportText += 'Q&A QUESTIONS:\n';
+        exportText += '---------------\n\n';
+        questions.forEach((q, i) => {
+          if (q.approved) {
+            exportText += `${i + 1}. ${q.text}\n`;
+          }
+        });
+        exportText += '\n';
+      }
+      
+      // Add notes
+      exportText += 'NOTES & TAKEAWAYS:\n';
+      exportText += '------------------\n\n';
+      exportText += document.getElementById('session-notes').value || '(No notes captured)';
+      
+      // Create downloadable file
+      const blob = new Blob([exportText], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `KMA_Session_Results_${new Date().toISOString().slice(0,10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     }
   </script>
 </body>
